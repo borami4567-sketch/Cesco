@@ -360,10 +360,22 @@
     .check-table .cno { text-align:center; width:8%; }
     /* Signature */
     .sig-row  { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; }
-    .sig-box  { border:2px dashed #ddd; border-radius:8px; padding:10px; text-align:center; }
-    .sig-box label { font-size:12px; font-weight:bold; color:#555; display:block; margin-bottom:6px; }
+    .sig-box  { border:2px dashed #ddd; border-radius:8px; padding:10px; text-align:center; cursor:pointer; transition:border-color .2s; }
+    .sig-box:hover { border-color:var(--ac); }
+    .sig-box label { font-size:12px; font-weight:bold; color:#555; display:block; margin-bottom:6px; cursor:pointer; }
     .sig-canvas { border:1px solid #ccc; border-radius:4px; touch-action:none; background:white; display:block; margin:0 auto; }
     .btn-clear-sig { margin-top:5px; background:#eee; border:none; border-radius:5px; padding:5px 12px; font-size:11px; cursor:pointer; width:100%; }
+    /* 전체화면 서명 오버레이 */
+    #sig-fullscreen { position:fixed; inset:0; background:#1a5276; z-index:1000; display:none; flex-direction:column; }
+    #sig-fullscreen.open { display:flex; }
+    .sig-fs-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(0,0,0,.2); flex-shrink:0; }
+    .sig-fs-title { color:white; font-size:16px; font-weight:bold; }
+    .sig-fs-hint  { color:rgba(255,255,255,.7); font-size:11px; margin-top:2px; }
+    #sig-fs-canvas { flex:1; display:block; background:white; touch-action:none; width:100%; }
+    .sig-fs-footer { display:flex; gap:10px; padding:12px 16px; background:rgba(0,0,0,.2); flex-shrink:0; }
+    .sig-fs-btn { flex:1; padding:13px; border:none; border-radius:10px; font-size:15px; font-weight:bold; cursor:pointer; }
+    .sig-fs-clear { background:rgba(255,255,255,.15); color:white; }
+    .sig-fs-save  { background:#27ae60; color:white; }
     /* Button bar */
     .btn-bar { display:flex; gap:8px; margin-top:12px; }
     .btn-main { flex:1; padding:13px 6px; border:none; border-radius:10px; font-size:14px; font-weight:bold; cursor:pointer; transition:opacity .2s; }
@@ -696,15 +708,15 @@
 
           <div class="fsec-title">서명</div>
           <div class="sig-row">
-            <div class="sig-box">
-              <label>고객 서명</label>
+            <div class="sig-box" onclick="openSigFullscreen('sig-customer')">
+              <label>고객 서명 <span style="font-size:10px;color:var(--ac);">탭하여 서명</span></label>
               <canvas class="sig-canvas" id="sig-customer" width="160" height="80"></canvas>
-              <button class="btn-clear-sig" onclick="clearSig('sig-customer')">지우기</button>
+              <button class="btn-clear-sig" onclick="event.stopPropagation();clearSig('sig-customer')">지우기</button>
             </div>
-            <div class="sig-box">
-              <label>파트너 서명</label>
+            <div class="sig-box" onclick="openSigFullscreen('sig-partner')">
+              <label>파트너 서명 <span style="font-size:10px;color:var(--ac);">탭하여 서명</span></label>
               <canvas class="sig-canvas" id="sig-partner" width="160" height="80"></canvas>
-              <button class="btn-clear-sig" onclick="clearSig('sig-partner')">지우기</button>
+              <button class="btn-clear-sig" onclick="event.stopPropagation();clearSig('sig-partner')">지우기</button>
             </div>
           </div>
         </div><!-- /form-card -->
@@ -803,6 +815,22 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 전체화면 서명 오버레이 -->
+<div id="sig-fullscreen">
+  <div class="sig-fs-header">
+    <div>
+      <div class="sig-fs-title" id="sig-fs-title">서명</div>
+      <div class="sig-fs-hint">손가락으로 서명해 주세요</div>
+    </div>
+    <button onclick="closeSigFullscreen()" style="background:rgba(255,255,255,.15);border:none;color:white;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer;">✕ 취소</button>
+  </div>
+  <canvas id="sig-fs-canvas"></canvas>
+  <div class="sig-fs-footer">
+    <button class="sig-fs-btn sig-fs-clear" onclick="clearSigFullscreen()">🗑️ 다시 그리기</button>
+    <button class="sig-fs-btn sig-fs-save"  onclick="saveSigFullscreen()">✅ 저장하기</button>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════
      JAVASCRIPT
@@ -1603,15 +1631,123 @@ function initSig(id) {
   canvas.addEventListener('touchmove',e=>{e.preventDefault();move(e);},{passive:false});
   canvas.addEventListener('touchend',end);
 }
-function clearSig(id){ const c=document.getElementById(id); if(c) c.getContext('2d').clearRect(0,0,c.width,c.height); }
+function clearSig(id){
+  const c=document.getElementById(id);
+  if(c) c.getContext('2d').clearRect(0,0,c.width,c.height);
+  delete _sigData[id];
+}
 function getSigData(id){
+  if(_sigData[id]) return _sigData[id];
   const c=document.getElementById(id); if(!c) return null;
   const d=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
   return Array.from(d).some((v,i)=>i%4===3&&v>0)?c.toDataURL():null;
 }
 function restoreSig(id,url){
   const c=document.getElementById(id); if(!c||!url) return;
-  const img=new Image(); img.onload=()=>c.getContext('2d').drawImage(img,0,0); img.src=url;
+  _sigData[id]=url;
+  const img=new Image(); img.onload=()=>c.getContext('2d').drawImage(img,0,0,c.width,c.height); img.src=url;
+}
+
+/* ─── 전체화면 서명 ─── */
+const _sigData = {}; // 고해상도 서명 dataURL 저장
+let _sigTargetId = null;
+let _sigFsDrawing = false, _sigFsLx = 0, _sigFsLy = 0;
+let _sigFsAbort = null;
+
+function openSigFullscreen(targetId) {
+  _sigTargetId = targetId;
+  document.getElementById('sig-fs-title').textContent =
+    targetId === 'sig-customer' ? '고객 서명' : '파트너 서명';
+
+  const overlay = document.getElementById('sig-fullscreen');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  // 레이아웃 완료 후 캔버스 크기 설정
+  requestAnimationFrame(() => {
+    const c = document.getElementById('sig-fs-canvas');
+    c.width  = overlay.clientWidth;
+    c.height = overlay.clientHeight
+             - overlay.querySelector('.sig-fs-header').offsetHeight
+             - overlay.querySelector('.sig-fs-footer').offsetHeight;
+
+    // 기존 서명 복원
+    const existing = getSigData(targetId);
+    if (existing) {
+      const img = new Image();
+      img.onload = () => c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      img.src = existing;
+    }
+    _initSigFsEvents();
+  });
+}
+
+function _initSigFsEvents() {
+  // 이전 이벤트 리스너 정리
+  if (_sigFsAbort) _sigFsAbort.abort();
+  _sigFsAbort = new AbortController();
+  const sig = _sigFsAbort.signal;
+
+  const c = document.getElementById('sig-fs-canvas');
+  const ctx = c.getContext('2d');
+
+  const pos = e => {
+    const r = c.getBoundingClientRect();
+    const s = e.touches ? e.touches[0] : e;
+    return {
+      x: (s.clientX - r.left) * (c.width  / r.width),
+      y: (s.clientY - r.top)  * (c.height / r.height)
+    };
+  };
+  const start = e => { _sigFsDrawing=true; const p=pos(e); _sigFsLx=p.x; _sigFsLy=p.y; };
+  const move  = e => {
+    if (!_sigFsDrawing) return;
+    const p = pos(e);
+    ctx.beginPath(); ctx.moveTo(_sigFsLx,_sigFsLy); ctx.lineTo(p.x,p.y);
+    ctx.strokeStyle='#111'; ctx.lineWidth=3; ctx.lineCap='round'; ctx.stroke();
+    _sigFsLx=p.x; _sigFsLy=p.y;
+  };
+  const end = () => _sigFsDrawing = false;
+
+  c.addEventListener('mousedown', start, {signal:sig});
+  c.addEventListener('mousemove', move,  {signal:sig});
+  c.addEventListener('mouseup',   end,   {signal:sig});
+  c.addEventListener('mouseleave',end,   {signal:sig});
+  c.addEventListener('touchstart', e=>{e.preventDefault();start(e);}, {passive:false, signal:sig});
+  c.addEventListener('touchmove',  e=>{e.preventDefault();move(e); }, {passive:false, signal:sig});
+  c.addEventListener('touchend',   end,  {signal:sig});
+}
+
+function clearSigFullscreen() {
+  const c = document.getElementById('sig-fs-canvas');
+  c.getContext('2d').clearRect(0, 0, c.width, c.height);
+}
+
+function saveSigFullscreen() {
+  const fc = document.getElementById('sig-fs-canvas');
+  const d  = fc.getContext('2d').getImageData(0,0,fc.width,fc.height).data;
+  const hasContent = Array.from(d).some((v,i) => i%4===3 && v>0);
+
+  if (hasContent) {
+    // 고해상도 dataURL로 저장 (케안축소 없이)
+    _sigData[_sigTargetId] = fc.toDataURL();
+    // 작은 캔버스에는 미리보기만 표시
+    const target = document.getElementById(_sigTargetId);
+    const tCtx = target.getContext('2d');
+    tCtx.clearRect(0, 0, target.width, target.height);
+    tCtx.drawImage(fc, 0, 0, target.width, target.height);
+  } else {
+    clearSig(_sigTargetId);
+  }
+  closeSigFullscreen();
+  showToast('✅ 서명이 저장되었습니다');
+}
+
+function closeSigFullscreen() {
+  if (_sigFsAbort) { _sigFsAbort.abort(); _sigFsAbort = null; }
+  document.getElementById('sig-fullscreen').classList.remove('open');
+  document.body.style.overflow = '';
+  _sigTargetId = null;
 }
 
 /* ─── 모달 ─── */
