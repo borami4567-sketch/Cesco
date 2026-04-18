@@ -393,70 +393,65 @@ function loadRecord(dateStr) {
 }
 
 function openModal(id) {
+  // 모달이 이미 열려있으면(회전 시) 현재 서명 내용 임시 보존
+  const isAlreadyOpen = document.getElementById('signModal').classList.contains('active');
+  const tempImage = isAlreadyOpen ? drawCanvas.toDataURL() : null;
+  
   currentId = id;
   document.getElementById('signModal').classList.add('active');
   
+  // 서명 모달: 가로 방향 고정 시도
+  if (screen.orientation && screen.orientation.lock) {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+  
   function setupCanvas() {
-    // 현재 캔버스 내용 임시 저장 (회전 중 그린 내용 보존)
-    const tempImage = drawCanvas.toDataURL();
-    
     const dpr = window.devicePixelRatio || 1;
-    const isPortrait = window.innerHeight > window.innerWidth;
-    const screenWidth = window.innerWidth;
-    const screenHeight = window.innerHeight;
-    const screenRatio = Math.max(screenWidth, screenHeight) / Math.min(screenWidth, screenHeight);
-    
-    // 폴드폰 감지: 종횡비가 2.0 이상이면 폴드폰으로 판단
+    // 항상 가로 기준으로 크기 결정 (방향 무관)
+    const longSide = Math.max(window.innerWidth, window.innerHeight);
+    const shortSide = Math.min(window.innerWidth, window.innerHeight);
+    const screenRatio = longSide / shortSide;
     const isFoldable = screenRatio > 2.0;
     
     let width, height;
-    
-    if (isPortrait) {
-      if (isFoldable) {
-        // 폴드폰 세로 모드: 더 큰 캔버스
-        width = Math.min(screenWidth - 30, 650);
-        height = Math.max(350, screenHeight - 150);
-      } else {
-        // 일반폰 세로 모드
-        width = Math.min(screenWidth - 30, 450);
-        height = Math.max(200, screenHeight - 200);
-      }
+    if (isFoldable) {
+      width = Math.min(longSide - 30, 850);
+      height = Math.max(300, shortSide - 120);
     } else {
-      if (isFoldable) {
-        // 폴드폰 가로 모드: 최대 활용
-        width = Math.min(screenWidth - 30, 850);
-        height = Math.max(300, screenHeight - 120);
-      } else {
-        // 일반폰 가로 모드
-        width = Math.min(screenWidth - 30, 700);
-        height = Math.max(200, screenHeight - 150);
-      }
+      width = Math.min(longSide - 30, 700);
+      height = Math.max(200, shortSide - 150);
     }
     
-    // 실제 물리적 픽셀 크기 설정 (DPI 고려)
     drawCanvas.width = width * dpr;
     drawCanvas.height = height * dpr;
-    // CSS 크기와 canvas 크기를 맞추기
     drawCanvas.style.width = width + 'px';
     drawCanvas.style.height = height + 'px';
     
-    // 흰 배경 설정
     drawCtx.fillStyle = 'white';
     drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
     
-    // 저장된 임시 이미지 복원 (현재 그린 서명)
-    const img = new Image();
-    img.onload = () => {
-      if (img.width > 0 && img.height > 0) {
-        const scaleX = drawCanvas.width / img.width;
-        const scaleY = drawCanvas.height / img.height;
-        const scale = Math.min(scaleX, scaleY);
-        const offsetX = (drawCanvas.width - img.width * scale) / 2;
-        const offsetY = (drawCanvas.height - img.height * scale) / 2;
-        drawCtx.drawImage(img, offsetX, offsetY, img.width * scale, img.height * scale);
+    if (tempImage) {
+      // 회전 중: 이전에 그린 서명 복원
+      const img = new Image();
+      img.onload = () => {
+        if (img.width > 0 && img.height > 0) {
+          const scale = Math.min(drawCanvas.width / img.width, drawCanvas.height / img.height);
+          const offsetX = (drawCanvas.width - img.width * scale) / 2;
+          const offsetY = (drawCanvas.height - img.height * scale) / 2;
+          drawCtx.drawImage(img, offsetX, offsetY, img.width * scale, img.height * scale);
+        }
+      };
+      img.src = tempImage;
+    } else {
+      // 처음 열기: 기존에 저장된 서명 불러오기
+      const sourceCanvas = document.getElementById(id);
+      if (sourceCanvas && sourceCanvas.width > 0 && sourceCanvas.height > 0) {
+        const scale = Math.min(drawCanvas.width / sourceCanvas.width, drawCanvas.height / sourceCanvas.height);
+        const offsetX = (drawCanvas.width - sourceCanvas.width * scale) / 2;
+        const offsetY = (drawCanvas.height - sourceCanvas.height * scale) / 2;
+        drawCtx.drawImage(sourceCanvas, offsetX, offsetY, sourceCanvas.width * scale, sourceCanvas.height * scale);
       }
-    };
-    img.src = tempImage;
+    }
   }
   
   setTimeout(setupCanvas, 50);
@@ -464,6 +459,10 @@ function openModal(id) {
 
 function closeModal() {
   document.getElementById('signModal').classList.remove('active');
+  // 가로 방향 잠금 해제
+  if (screen.orientation && screen.orientation.unlock) {
+    screen.orientation.unlock();
+  }
   clearDraw();
   currentId = null;
 }
@@ -480,33 +479,19 @@ function saveSig() {
     const c = document.getElementById(currentId);
     const ctx = c.getContext('2d');
     
-    // 캔버스 물리적 크기 확인
-    const dpr = window.devicePixelRatio || 1;
-    if (c.width === 0 || c.height === 0) {
-      const rect = c.getBoundingClientRect();
-      c.width = rect.width * dpr;
-      c.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    }
-    
-    // 흰 배경 설정
+    // 흰 배경
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, c.width, c.height);
     
-    // drawCanvas 콘텐츠 복사
-    const drawWidth = drawCanvas.width / dpr;
-    const drawHeight = drawCanvas.height / dpr;
-    
-    // 타겟 canvas에 맞춰서 그리기 (더 나은 품질)
-    const ratio = Math.min(c.width / drawWidth, c.height / drawHeight);
-    const newWidth = drawWidth * ratio;
-    const newHeight = drawHeight * ratio;
+    // 물리적 픽셀 기준으로 스케일 계산 (단위 혼용 제거)
+    const scale = Math.min(c.width / drawCanvas.width, c.height / drawCanvas.height);
+    const newWidth = drawCanvas.width * scale;
+    const newHeight = drawCanvas.height * scale;
     const offsetX = (c.width - newWidth) / 2;
     const offsetY = (c.height - newHeight) / 2;
     
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.globalAlpha = 1.0;
     ctx.drawImage(drawCanvas, offsetX, offsetY, newWidth, newHeight);
   }
   closeModal();
