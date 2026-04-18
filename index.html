@@ -223,17 +223,16 @@ window.addEventListener('load', () => {
     isDrawing = true; 
     const r = drawCanvas.getBoundingClientRect(); 
     const dpr = window.devicePixelRatio || 1;
-    lastX = (e.clientX - r.left) * dpr; 
-    lastY = (e.clientY - r.top) * dpr; 
+    lastX = (e.clientX - r.left) * (drawCanvas.width / r.width); 
+    lastY = (e.clientY - r.top) * (drawCanvas.height / r.height); 
   });
   drawCanvas.addEventListener('mousemove', (e) => {
     if (!isDrawing) return;
     const r = drawCanvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const x = (e.clientX - r.left) * dpr;
-    const y = (e.clientY - r.top) * dpr;
+    const x = (e.clientX - r.left) * (drawCanvas.width / r.width);
+    const y = (e.clientY - r.top) * (drawCanvas.height / r.height);
     drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth = 3 * dpr;
+    drawCtx.lineWidth = 3;
     drawCtx.lineCap = 'round';
     drawCtx.lineJoin = 'round';
     drawCtx.beginPath();
@@ -250,20 +249,18 @@ window.addEventListener('load', () => {
     isDrawing = true; 
     const t = e.touches[0]; 
     const r = drawCanvas.getBoundingClientRect(); 
-    const dpr = window.devicePixelRatio || 1;
-    lastX = (t.clientX - r.left) * dpr; 
-    lastY = (t.clientY - r.top) * dpr; 
+    lastX = (t.clientX - r.left) * (drawCanvas.width / r.width); 
+    lastY = (t.clientY - r.top) * (drawCanvas.height / r.height); 
   });
   drawCanvas.addEventListener('touchmove', (e) => { 
     e.preventDefault(); 
     if (!isDrawing) return; 
     const t = e.touches[0]; 
     const r = drawCanvas.getBoundingClientRect(); 
-    const dpr = window.devicePixelRatio || 1;
-    const x = (t.clientX - r.left) * dpr; 
-    const y = (t.clientY - r.top) * dpr; 
+    const x = (t.clientX - r.left) * (drawCanvas.width / r.width); 
+    const y = (t.clientY - r.top) * (drawCanvas.height / r.height); 
     drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth = 3 * dpr;
+    drawCtx.lineWidth = 3;
     drawCtx.lineCap = 'round';
     drawCtx.lineJoin = 'round';
     drawCtx.beginPath(); 
