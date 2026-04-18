@@ -224,6 +224,10 @@ window.addEventListener('load', () => {
     const dpr = window.devicePixelRatio || 1;
     const x = (e.clientX - r.left) * dpr;
     const y = (e.clientY - r.top) * dpr;
+    drawCtx.strokeStyle = '#000';
+    drawCtx.lineWidth = 3 * dpr;
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
     drawCtx.beginPath();
     drawCtx.moveTo(lastX, lastY);
     drawCtx.lineTo(x, y);
@@ -250,6 +254,10 @@ window.addEventListener('load', () => {
     const dpr = window.devicePixelRatio || 1;
     const x = (t.clientX - r.left) * dpr; 
     const y = (t.clientY - r.top) * dpr; 
+    drawCtx.strokeStyle = '#000';
+    drawCtx.lineWidth = 3 * dpr;
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
     drawCtx.beginPath(); 
     drawCtx.moveTo(lastX, lastY); 
     drawCtx.lineTo(x, y); 
@@ -356,12 +364,14 @@ function openModal(id) {
     // CSS 크기와 canvas 크기를 맞추기
     drawCanvas.style.width = drawCanvas.width / dpr + 'px';
     drawCanvas.style.height = drawCanvas.height / dpr + 'px';
-    // DPI 스케일 적용
-    drawCtx.scale(dpr, dpr);
-    drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth = 2;
-    drawCtx.lineCap = 'round';
-    drawCtx.lineJoin = 'round';
+    
+    // 이전 서명이 있으면 drawCanvas에 복사
+    const sourceCanvas = document.getElementById(id);
+    if (sourceCanvas) {
+      const sourceCtx = sourceCanvas.getContext('2d');
+      const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
+      drawCtx.putImageData(sourceImageData, 0, 0);
+    }
   }, 50);
 }
 
@@ -372,8 +382,9 @@ function closeModal() {
 }
 
 function clearDraw() { 
-  const dpr = window.devicePixelRatio || 1;
-  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); 
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCtx.fillStyle = 'white';
+  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
 }
 function clearSig() { mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height); }
 
@@ -385,22 +396,21 @@ function saveSig() {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, c.width, c.height);
     
-    // drawCanvas 크기 정규화
+    // drawCanvas 직접 복사 (DPI 고려)
     const dpr = window.devicePixelRatio || 1;
     const drawWidth = drawCanvas.width / dpr;
     const drawHeight = drawCanvas.height / dpr;
     
-    // 타겟 canvas에 맞춰서 그리기 (가로세로 비율 유지)
+    // 타겟 canvas에 맞춰서 그리기
     const ratio = Math.min(c.width / drawWidth, c.height / drawHeight);
     const newWidth = drawWidth * ratio;
     const newHeight = drawHeight * ratio;
     const offsetX = (c.width - newWidth) / 2;
     const offsetY = (c.height - newHeight) / 2;
     
-    // 고품질로 그리기
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, offsetX, offsetY, newWidth, newHeight);
+    ctx.drawImage(drawCanvas, offsetX, offsetY, newWidth, newHeight);
   }
   closeModal();
 }
