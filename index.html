@@ -84,6 +84,14 @@
       .sig-content { flex-direction: column; gap: 10px; }
       .modal-btn { padding: 10px 15px; font-size: 12px; }
     }
+    
+    /* 휴대폰 가로 모드 (landscape) */
+    @media (max-height: 500px) and (orientation: landscape) {
+      .signature-modal { padding: 5px; }
+      .modal-canvas { min-height: 200px; margin-bottom: 5px; }
+      .modal-controls { gap: 5px; }
+      .modal-btn { padding: 5px 10px; font-size: 11px; }
+    }
   </style>
 </head>
 <body>
@@ -358,12 +366,27 @@ function openModal(id) {
   setTimeout(() => {
     const rect = drawCanvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
+    
+    // 화면 크기에 따라 canvas 크기 결정
+    let width, height;
+    const isPortrait = window.innerHeight > window.innerWidth;
+    
+    if (isPortrait) {
+      // 세로 모드: 가로는 최대한 크게, 세로는 적절하게
+      width = Math.max(rect.width, 320) || 320;
+      height = Math.max(200, window.innerHeight * 0.4) || 250;
+    } else {
+      // 가로 모드: 충분한 크기
+      width = Math.max(rect.width, 400) || 400;
+      height = Math.max(rect.height, 200) || 200;
+    }
+    
     // 실제 물리적 픽셀 크기 설정
-    drawCanvas.width = (Math.max(rect.width, 400) || 400) * dpr;
-    drawCanvas.height = (Math.max(rect.height, 250) || 250) * dpr;
+    drawCanvas.width = width * dpr;
+    drawCanvas.height = height * dpr;
     // CSS 크기와 canvas 크기를 맞추기
-    drawCanvas.style.width = drawCanvas.width / dpr + 'px';
-    drawCanvas.style.height = drawCanvas.height / dpr + 'px';
+    drawCanvas.style.width = width + 'px';
+    drawCanvas.style.height = height + 'px';
     
     // 이전 서명이 있으면 drawCanvas에 복사
     const sourceCanvas = document.getElementById(id);
