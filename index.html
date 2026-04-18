@@ -73,7 +73,7 @@
     .btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
     .btn-primary:hover { background: #0d3b66; }
     .button-area { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-    .small-canvas { width: 150px; height: 80px; border: 1px solid #999; background: white; cursor: pointer; display: block; margin: 2px auto; }
+    .small-canvas { width: 150px; height: 55px; border: 1px solid #999; background: white; cursor: pointer; display: block; margin: 2px auto; }
     .signature-modal { display: none; position: fixed; z-index: 9999; background: white; flex-direction: column; padding: 15px; }
     /* 기본(가로 모드 또는 PC): 전체 화면 */
     .signature-modal.active { display: flex; top: 0; left: 0; width: 100%; height: 100%; }
@@ -92,12 +92,32 @@
     .modal-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .modal-btn { padding: 8px 15px; border: 1px solid #999; border-radius: 3px; font-size: 12px; font-weight: bold; cursor: pointer; background: #f0f0f0; }
     .modal-btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
-    .sig-section { margin-top: 15px; padding: 8px; border: 1px solid #999; background: #fafafa; }
+    .sig-section { margin-top: 8px; padding: 4px 8px; border: 1px solid #999; background: #fafafa; }
     .sig-title { font-weight: bold; margin-bottom: 8px; font-size: 11px; text-align: right; }
     .sig-content { display: flex; gap: 20px; justify-content: flex-end; align-items: flex-start; }
     canvas { border: 1px solid #999; background: white; cursor: crosshair; display: block; }
     .company { text-align: center; margin-top: 15px; font-weight: bold; font-size: 11px; }
-    @media print { .split-layout { flex-direction: column; } .calendar-panel { display: none; } .button-area { display: none; } }
+    @media print {
+      @page { size: A4 portrait; margin: 7mm; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      body { background: white; padding: 0; margin: 0; font-size: 9px; }
+      .screen { display: none !important; }
+      #screenForm { display: block !important; }
+      .form-screen { max-width: 100%; }
+      .form-header { display: none; }
+      .form-body { padding: 4px; box-shadow: none; overflow: visible; }
+      .button-area { display: none; }
+      .title { font-size: 13px; margin-bottom: 8px; }
+      table { margin-bottom: 5px; }
+      th, td { padding: 3px 3px; font-size: 9px; }
+      input[type="text"], input[type="tel"], input[type="number"],
+      input[type="date"], input[type="time"] { font-size: 9px; }
+      .small-canvas { width: 130px; height: 50px; }
+      .sig-section { margin-top: 5px; padding: 3px 6px; }
+      .sig-title { font-size: 10px; margin-bottom: 4px; }
+      #signCanvas { height: 60px !important; }
+      .company { margin-top: 8px; font-size: 10px; }
+    }
     
     /* 반응형 */
     @media (max-width: 767px) {
@@ -223,7 +243,7 @@
         <div class="sig-title">고객 서명</div>
         <div class="sig-content">
           <div>
-            <canvas id="signCanvas" width="400" height="120" onclick="openModal('signCanvas')"></canvas>
+            <canvas id="signCanvas" width="400" height="80" style="height:70px;" onclick="openModal('signCanvas')"></canvas>
           </div>
         </div>
       </div>
