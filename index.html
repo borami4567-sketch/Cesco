@@ -112,11 +112,11 @@
       th, td { padding: 3px 3px; font-size: 9px; }
       input[type="text"], input[type="tel"], input[type="number"],
       input[type="date"], input[type="time"] { font-size: 9px; }
-      .small-canvas { width: 130px; height: 50px; }
-      .sig-section { margin-top: 5px; padding: 3px 6px; }
-      .sig-title { font-size: 10px; margin-bottom: 4px; }
-      #signCanvas { height: 60px !important; }
-      .company { margin-top: 8px; font-size: 10px; }
+      canvas.small-canvas { width: 120px !important; height: 38px !important; max-height: 38px !important; }
+      .sig-section { margin-top: 4px; padding: 2px 6px; }
+      .sig-title { font-size: 9px; margin-bottom: 2px; }
+      #signCanvas { width: 100% !important; height: 45px !important; max-height: 45px !important; }
+      .company { margin-top: 6px; font-size: 9px; }
     }
     
     /* 반응형 */
@@ -219,8 +219,8 @@
 
       <table>
         <tr><th style="text-align:left;width:60%;">특이사항 등의 여부(고객 기록)</th><th style="width:20%;">동의/부동의</th><th style="width:20%;">서명</th></tr>
-        <tr><td style="text-align:left;">1. 서비스 환경 및 기기에 따라 주기 추가 요금 발생 동의 여부</td><td style="text-align:center;"><input type="radio" name="extra_period" value="동의"> 동의<br><input type="radio" name="extra_period" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="extraPeriodCanvas" width="240" height="160" onclick="openModal('extraPeriodCanvas')"></canvas></td></tr>
-        <tr><td style="text-align:left;">2. 노후 인해 세척간 기기 손상 가능성에 따른 책임 고객 감수 동의 여부</td><td style="text-align:center;"><input type="radio" name="damage" value="동의"> 동의<br><input type="radio" name="damage" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="damageCanvas" width="240" height="160" onclick="openModal('damageCanvas')"></canvas></td></tr>
+        <tr><td style="text-align:left;">1. 서비스 환경 및 기기에 따라 주기 추가 요금 발생 동의 여부</td><td style="text-align:center;"><input type="radio" name="extra_period" value="동의"> 동의 &nbsp;<input type="radio" name="extra_period" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="extraPeriodCanvas" width="160" height="80" onclick="openModal('extraPeriodCanvas')"></canvas></td></tr>
+        <tr><td style="text-align:left;">2. 노후 인해 세척간 기기 손상 가능성에 따른 책임 고객 감수 동의 여부</td><td style="text-align:center;"><input type="radio" name="damage" value="동의"> 동의 &nbsp;<input type="radio" name="damage" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="damageCanvas" width="160" height="80" onclick="openModal('damageCanvas')"></canvas></td></tr>
       </table>
       
       <table>
