@@ -259,9 +259,16 @@ let isDrawing = false, lastX = 0, lastY = 0, currentId = null, currentDate = nul
 let mainCanvas = null, mainCtx = null, drawCanvas = null, drawCtx = null;
 let currentMonth = new Date(), today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
 
-function getRecords() { return JSON.parse(localStorage.getItem('sesco_records') || '[]'); }
-function saveRecords(records) { localStorage.setItem('sesco_records', JSON.stringify(records)); }
 function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+function getRecords() {
+  let records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
+  // id 없는 기존 기록에 자동 id 부여 (마이그레이션)
+  let changed = false;
+  records = records.map(r => { if (!r.id) { r.id = genId(); changed = true; } return r; });
+  if (changed) localStorage.setItem('sesco_records', JSON.stringify(records));
+  return records;
+}
+function saveRecords(records) { localStorage.setItem('sesco_records', JSON.stringify(records)); }
 
 function showCalendar() {
   document.getElementById('screenCalendar').classList.add('active');
