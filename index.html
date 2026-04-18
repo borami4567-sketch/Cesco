@@ -49,9 +49,21 @@
     .btn-primary:hover { background: #0d3b66; }
     .button-area { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
     .small-canvas { width: 150px; height: 80px; border: 1px solid #999; background: white; cursor: pointer; display: block; margin: 2px auto; }
-    .signature-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; flex-direction: column; padding: 15px; }
-    .signature-modal.active { display: flex; }
-    .modal-canvas { flex: 1; border: 2px solid #333; cursor: crosshair; background: white; width: 100%; min-height: 300px; margin-bottom: 10px; }
+    .signature-modal { display: none; position: fixed; z-index: 9999; background: white; flex-direction: column; padding: 15px; }
+    /* 기본(가로 모드 또는 PC): 전체 화면 */
+    .signature-modal.active { display: flex; top: 0; left: 0; width: 100%; height: 100%; }
+    /* 세로 모드일 때: 90도 회전해서 가로처럼 보이게 */
+    @media (orientation: portrait) {
+      .signature-modal.active {
+        top: 0;
+        left: 0;
+        width: 100vh;
+        height: 100vw;
+        transform-origin: top left;
+        transform: rotate(90deg) translateY(-100%);
+      }
+    }
+    .modal-canvas { flex: 1; border: 2px solid #333; cursor: crosshair; background: white; width: 100%; min-height: 200px; margin-bottom: 10px; }
     .modal-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .modal-btn { padding: 8px 15px; border: 1px solid #999; border-radius: 3px; font-size: 12px; font-weight: bold; cursor: pointer; background: #f0f0f0; }
     .modal-btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
@@ -237,18 +249,37 @@ window.addEventListener('load', () => {
   drawCanvas = document.getElementById('drawCanvas');
   drawCtx = drawCanvas.getContext('2d');
   
+  // CSS rotate 좌표 보정: portrait 세로 화면에서 모달이 90도 회전되어 있을 때
+  function getCanvasPos(clientX, clientY) {
+    const r = drawCanvas.getBoundingClientRect();
+    const isPortrait = window.innerHeight > window.innerWidth;
+    if (isPortrait) {
+      // 모달이 rotate(90deg) translateY(-100%) 된 상태
+      // 실제 캔버스 좌측 상단이 화면 우측 하단 방향에 있음
+      // clientX, clientY → 캔버스 내 좌표로 변환
+      const relX = clientX - r.left;
+      const relY = clientY - r.top;
+      // 회전 역변환: 캔버스 너비/높이 기준
+      const canvasX = (r.height - relY) * (drawCanvas.width / r.height);
+      const canvasY = relX * (drawCanvas.height / r.width);
+      return { x: canvasX, y: canvasY };
+    } else {
+      return {
+        x: (clientX - r.left) * (drawCanvas.width / r.width),
+        y: (clientY - r.top) * (drawCanvas.height / r.height)
+      };
+    }
+  }
+
   drawCanvas.addEventListener('mousedown', (e) => { 
     isDrawing = true; 
-    const r = drawCanvas.getBoundingClientRect(); 
-    const dpr = window.devicePixelRatio || 1;
-    lastX = (e.clientX - r.left) * (drawCanvas.width / r.width); 
-    lastY = (e.clientY - r.top) * (drawCanvas.height / r.height); 
+    const pos = getCanvasPos(e.clientX, e.clientY);
+    lastX = pos.x; lastY = pos.y;
   });
   drawCanvas.addEventListener('mousemove', (e) => {
     if (!isDrawing) return;
-    const r = drawCanvas.getBoundingClientRect();
-    const x = (e.clientX - r.left) * (drawCanvas.width / r.width);
-    const y = (e.clientY - r.top) * (drawCanvas.height / r.height);
+    const pos = getCanvasPos(e.clientX, e.clientY);
+    const x = pos.x, y = pos.y;
     drawCtx.strokeStyle = '#000';
     drawCtx.lineWidth = 3;
     drawCtx.lineCap = 'round';
@@ -266,17 +297,15 @@ window.addEventListener('load', () => {
     e.preventDefault(); 
     isDrawing = true; 
     const t = e.touches[0]; 
-    const r = drawCanvas.getBoundingClientRect(); 
-    lastX = (t.clientX - r.left) * (drawCanvas.width / r.width); 
-    lastY = (t.clientY - r.top) * (drawCanvas.height / r.height); 
+    const pos = getCanvasPos(t.clientX, t.clientY);
+    lastX = pos.x; lastY = pos.y;
   });
   drawCanvas.addEventListener('touchmove', (e) => { 
     e.preventDefault(); 
     if (!isDrawing) return; 
     const t = e.touches[0]; 
-    const r = drawCanvas.getBoundingClientRect(); 
-    const x = (t.clientX - r.left) * (drawCanvas.width / r.width); 
-    const y = (t.clientY - r.top) * (drawCanvas.height / r.height); 
+    const pos = getCanvasPos(t.clientX, t.clientY);
+    const x = pos.x, y = pos.y; 
     drawCtx.strokeStyle = '#000';
     drawCtx.lineWidth = 3;
     drawCtx.lineCap = 'round';
@@ -407,19 +436,20 @@ function openModal(id) {
   
   function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    // 항상 가로 기준으로 크기 결정 (방향 무관)
+    // CSS rotate로 모달이 가로로 보이므로, 캔버스도 항상 longSide x shortSide 기준
     const longSide = Math.max(window.innerWidth, window.innerHeight);
     const shortSide = Math.min(window.innerWidth, window.innerHeight);
     const screenRatio = longSide / shortSide;
     const isFoldable = screenRatio > 2.0;
     
+    // 모달 내부는 회전 후 longSide 가 width, shortSide 가 height 가 됨
     let width, height;
     if (isFoldable) {
-      width = Math.min(longSide - 30, 850);
-      height = Math.max(300, shortSide - 120);
+      width = longSide - 30;
+      height = shortSide - 100;
     } else {
-      width = Math.min(longSide - 30, 700);
-      height = Math.max(200, shortSide - 150);
+      width = longSide - 30;
+      height = shortSide - 100;
     }
     
     drawCanvas.width = width * dpr;
