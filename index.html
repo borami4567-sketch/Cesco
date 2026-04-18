@@ -272,6 +272,13 @@ window.addEventListener('load', () => {
   });
   drawCanvas.addEventListener('touchend', (e) => { e.preventDefault(); isDrawing = false; });
   
+  // 기기 회전 시 canvas 자동 리사이징
+  window.addEventListener('orientationchange', () => {
+    if (currentId && document.getElementById('signModal').classList.contains('active')) {
+      setTimeout(() => openModal(currentId), 100);
+    }
+  });
+  
   renderCalendar();
   renderRecordsList();
   document.getElementById('serviceDate').valueAsDate = today;
@@ -360,22 +367,20 @@ function loadRecord(dateStr) {
 function openModal(id) {
   currentId = id;
   document.getElementById('signModal').classList.add('active');
-  setTimeout(() => {
-    const rect = drawCanvas.getBoundingClientRect();
+  
+  function setupCanvas() {
     const dpr = window.devicePixelRatio || 1;
-    
-    // 화면 크기에 따라 canvas 크기 결정
-    let width, height;
     const isPortrait = window.innerHeight > window.innerWidth;
+    let width, height;
     
     if (isPortrait) {
-      // 세로 모드: 가로는 최대한 크게, 세로는 적절하게
-      width = Math.max(rect.width, 320) || 320;
-      height = Math.max(200, window.innerHeight * 0.4) || 250;
+      // 세로 모드: 전체 가로 활용, 높이 충분하게
+      width = Math.min(window.innerWidth - 30, 500);
+      height = Math.max(200, window.innerHeight - 200);
     } else {
-      // 가로 모드: 충분한 크기
-      width = Math.max(rect.width, 400) || 400;
-      height = Math.max(rect.height, 200) || 200;
+      // 가로 모드: 전체 가로/세로 활용
+      width = Math.min(window.innerWidth - 30, 700);
+      height = Math.max(200, window.innerHeight - 150);
     }
     
     // 실제 물리적 픽셀 크기 설정
@@ -392,7 +397,9 @@ function openModal(id) {
       const sourceImageData = sourceCtx.getImageData(0, 0, sourceCanvas.width, sourceCanvas.height);
       drawCtx.putImageData(sourceImageData, 0, 0);
     }
-  }, 50);
+  }
+  
+  setTimeout(setupCanvas, 50);
 }
 
 function closeModal() {
