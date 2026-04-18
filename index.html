@@ -45,7 +45,7 @@
     .btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
     .btn-primary:hover { background: #0d3b66; }
     .button-area { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-    .small-canvas { width: 80px; height: 40px; border: 1px solid #999; background: #f9f9f9; cursor: pointer; display: block; margin: 2px auto; }
+    .small-canvas { width: 120px; height: 50px; border: 1px solid #999; background: #f9f9f9; cursor: pointer; display: block; margin: 2px auto; }
     .signature-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; flex-direction: column; padding: 15px; }
     .signature-modal.active { display: flex; }
     .modal-canvas { flex: 1; border: 2px solid #333; cursor: crosshair; background: white; width: 100%; min-height: 300px; margin-bottom: 10px; }
@@ -67,7 +67,7 @@
       .cal-day-name, .cal-day { font-size: 9px; padding: 4px 2px; }
       th, td { padding: 4px 3px; font-size: 9px; }
       input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 9px; }
-      .small-canvas { width: 70px; height: 35px; }
+      .small-canvas { width: 100px; height: 40px; }
       .title { font-size: 13px; margin-bottom: 15px; }
     }
     
@@ -80,7 +80,7 @@
       th, td { padding: 5px; font-size: 11px; }
       input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 11px; padding: 3px; }
       .btn, .modal-btn { padding: 6px 12px; font-size: 11px; }
-      .small-canvas { width: 100%; max-width: 150px; height: 50px; }
+      .small-canvas { width: 100%; max-width: 200px; height: 60px; }
       .sig-content { flex-direction: column; gap: 10px; }
       .modal-btn { padding: 10px 15px; font-size: 12px; }
     }
@@ -173,7 +173,7 @@
         <div class="sig-title">고객 서명</div>
         <div class="sig-content">
           <div>
-            <canvas id="signCanvas" width="150" height="80" onclick="openModal('signCanvas')"></canvas>
+            <canvas id="signCanvas" width="200" height="60" onclick="openModal('signCanvas')"></canvas>
           </div>
         </div>
       </div>
@@ -211,26 +211,52 @@ window.addEventListener('load', () => {
   drawCanvas = document.getElementById('drawCanvas');
   drawCtx = drawCanvas.getContext('2d');
   
-  drawCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const r = drawCanvas.getBoundingClientRect(); lastX = e.clientX - r.left; lastY = e.clientY - r.top; });
+  drawCanvas.addEventListener('mousedown', (e) => { 
+    isDrawing = true; 
+    const r = drawCanvas.getBoundingClientRect(); 
+    const dpr = window.devicePixelRatio || 1;
+    lastX = (e.clientX - r.left) * dpr; 
+    lastY = (e.clientY - r.top) * dpr; 
+  });
   drawCanvas.addEventListener('mousemove', (e) => {
     if (!isDrawing) return;
     const r = drawCanvas.getBoundingClientRect();
-    const x = e.clientX - r.left, y = e.clientY - r.top;
+    const dpr = window.devicePixelRatio || 1;
+    const x = (e.clientX - r.left) * dpr;
+    const y = (e.clientY - r.top) * dpr;
     drawCtx.beginPath();
     drawCtx.moveTo(lastX, lastY);
     drawCtx.lineTo(x, y);
-    drawCtx.strokeStyle = '#000';
-    drawCtx.lineWidth = 2;
-    drawCtx.lineCap = 'round';
-    drawCtx.lineJoin = 'round';
     drawCtx.stroke();
     lastX = x;
     lastY = y;
   });
   drawCanvas.addEventListener('mouseup', () => { isDrawing = false; });
   drawCanvas.addEventListener('mouseout', () => { isDrawing = false; });
-  drawCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDrawing = true; const t = e.touches[0]; const r = drawCanvas.getBoundingClientRect(); lastX = t.clientX - r.left; lastY = t.clientY - r.top; });
-  drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (!isDrawing) return; const t = e.touches[0]; const r = drawCanvas.getBoundingClientRect(); const x = t.clientX - r.left, y = t.clientY - r.top; drawCtx.beginPath(); drawCtx.moveTo(lastX, lastY); drawCtx.lineTo(x, y); drawCtx.strokeStyle = '#000'; drawCtx.lineWidth = 2; drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; drawCtx.stroke(); lastX = x; lastY = y; });
+  drawCanvas.addEventListener('touchstart', (e) => { 
+    e.preventDefault(); 
+    isDrawing = true; 
+    const t = e.touches[0]; 
+    const r = drawCanvas.getBoundingClientRect(); 
+    const dpr = window.devicePixelRatio || 1;
+    lastX = (t.clientX - r.left) * dpr; 
+    lastY = (t.clientY - r.top) * dpr; 
+  });
+  drawCanvas.addEventListener('touchmove', (e) => { 
+    e.preventDefault(); 
+    if (!isDrawing) return; 
+    const t = e.touches[0]; 
+    const r = drawCanvas.getBoundingClientRect(); 
+    const dpr = window.devicePixelRatio || 1;
+    const x = (t.clientX - r.left) * dpr; 
+    const y = (t.clientY - r.top) * dpr; 
+    drawCtx.beginPath(); 
+    drawCtx.moveTo(lastX, lastY); 
+    drawCtx.lineTo(x, y); 
+    drawCtx.stroke(); 
+    lastX = x; 
+    lastY = y; 
+  });
   drawCanvas.addEventListener('touchend', (e) => { e.preventDefault(); isDrawing = false; });
   
   renderCalendar();
@@ -323,15 +349,19 @@ function openModal(id) {
   document.getElementById('signModal').classList.add('active');
   setTimeout(() => {
     const rect = drawCanvas.getBoundingClientRect();
-    drawCanvas.width = Math.max(rect.width, 400) || 400;
-    drawCanvas.height = Math.max(rect.height, 300) || 300;
-    // DPI 스케일 보정 (고해상도 디스플레이용)
     const dpr = window.devicePixelRatio || 1;
-    if (dpr > 1) {
-      drawCanvas.width *= dpr;
-      drawCanvas.height *= dpr;
-      drawCtx.scale(dpr, dpr);
-    }
+    // 실제 물리적 픽셀 크기 설정
+    drawCanvas.width = (Math.max(rect.width, 400) || 400) * dpr;
+    drawCanvas.height = (Math.max(rect.height, 250) || 250) * dpr;
+    // CSS 크기와 canvas 크기를 맞추기
+    drawCanvas.style.width = drawCanvas.width / dpr + 'px';
+    drawCanvas.style.height = drawCanvas.height / dpr + 'px';
+    // DPI 스케일 적용
+    drawCtx.scale(dpr, dpr);
+    drawCtx.strokeStyle = '#000';
+    drawCtx.lineWidth = 2;
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
   }, 50);
 }
 
@@ -341,7 +371,10 @@ function closeModal() {
   currentId = null;
 }
 
-function clearDraw() { drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); }
+function clearDraw() { 
+  const dpr = window.devicePixelRatio || 1;
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); 
+}
 function clearSig() { mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height); }
 
 function saveSig() {
@@ -349,8 +382,10 @@ function saveSig() {
     const c = document.getElementById(currentId);
     const ctx = c.getContext('2d');
     ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = 'white';
+    ctx.fillRect(0, 0, c.width, c.height);
     
-    // drawCanvas 크기를 canvas 기본 크기로 정규화
+    // drawCanvas 크기 정규화
     const dpr = window.devicePixelRatio || 1;
     const drawWidth = drawCanvas.width / dpr;
     const drawHeight = drawCanvas.height / dpr;
@@ -362,7 +397,10 @@ function saveSig() {
     const offsetX = (c.width - newWidth) / 2;
     const offsetY = (c.height - newHeight) / 2;
     
-    ctx.drawImage(drawCanvas, offsetX, offsetY, newWidth, newHeight);
+    // 고품질로 그리기
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(drawCanvas, 0, 0, drawCanvas.width, drawCanvas.height, offsetX, offsetY, newWidth, newHeight);
   }
   closeModal();
 }
