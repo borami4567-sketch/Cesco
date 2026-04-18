@@ -1,0 +1,24 @@
+{
+  "name": "세스코라이프 케어 – 서비스 결과서",
+  "short_name": "세스코케어",
+  "description": "세스코라이프 케어 서비스 결과서 관리",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a5276",
+  "theme_color": "#1a5276",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

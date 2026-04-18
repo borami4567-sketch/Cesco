@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>세스코라이프케어 냉난방기 클리닝 서비스 결과서</title>
+  <meta name="theme-color" content="#1a5276">
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="manifest.json">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: '맑은 고딕', Arial, sans-serif; background: #f5f5f5; padding: 10px; color: #333; }
+    .split-layout { display: flex; gap: 10px; max-width: 1400px; margin: 0 auto; }
+    .calendar-panel { flex: 0 0 280px; background: white; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .form-panel { flex: 1; background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; word-break: break-word; }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; }
+    .cal-nav { cursor: pointer; font-size: 18px; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+    .cal-day-name { text-align: center; font-weight: bold; font-size: 11px; padding: 5px; background: #e8e8e8; }
+    .cal-day { text-align: center; padding: 8px 3px; font-size: 11px; border: 1px solid #ddd; cursor: pointer; background: white; }
+    .cal-day.other { color: #ccc; cursor: default; }
+    .cal-day.disabled { background: #f0f0f0; cursor: not-allowed; color: #999; }
+    .cal-day.today { background: #fff3cd; font-weight: bold; }
+    .cal-day.saved { background: #c3e6cb; color: #155724; font-weight: bold; }
+    .cal-day.saved.disabled { background: #d4edda; }
+    .cal-day:not(.other):not(.disabled):hover { background: #d9ecf7; }
+    .records-title { font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 12px; }
+    .records-list { font-size: 11px; max-height: 150px; overflow-y: auto; }
+    .record-item { padding: 5px; margin: 3px 0; background: #f9f9f9; border-left: 3px solid #1a5276; cursor: pointer; border-radius: 2px; }
+    .record-item:hover { background: #e8f4f8; }
+    .record-item.active { background: #c3e6cb; border-left-color: #155724; }
+    .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #000; }
+    th, td { border: 1px solid #000; padding: 5px 4px; font-size: 10px; }
+    th { background: #e8e8e8; font-weight: bold; text-align: center; }
+    input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] {
+      width: 100%; border: none; padding: 1px 2px; font-size: 10px; background: transparent; font-family: inherit;
+    }
+    input[type="radio"] { margin-right: 2px; cursor: pointer; }
+    .btn { padding: 8px 15px; border: 1px solid #999; border-radius: 3px; font-size: 12px; font-weight: bold; cursor: pointer; background: #f0f0f0; }
+    .btn:hover { background: #e0e0e0; }
+    .btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
+    .btn-primary:hover { background: #0d3b66; }
+    .button-area { display: flex; gap: 10px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+    .small-canvas { width: 80px; height: 40px; border: 1px solid #999; background: #f9f9f9; cursor: pointer; display: block; margin: 2px auto; }
+    .signature-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; flex-direction: column; padding: 15px; }
+    .signature-modal.active { display: flex; }
+    .modal-canvas { flex: 1; border: 2px solid #333; cursor: crosshair; background: white; width: 100%; min-height: 300px; margin-bottom: 10px; }
+    .modal-controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .modal-btn { padding: 8px 15px; border: 1px solid #999; border-radius: 3px; font-size: 12px; font-weight: bold; cursor: pointer; background: #f0f0f0; }
+    .modal-btn-primary { background: #1a5276; color: white; border-color: #1a5276; }
+    .sig-section { margin-top: 15px; padding: 8px; border: 1px solid #999; background: #fafafa; }
+    .sig-title { font-weight: bold; margin-bottom: 8px; font-size: 11px; text-align: right; }
+    .sig-content { display: flex; gap: 20px; justify-content: flex-end; align-items: flex-start; }
+    canvas { border: 1px solid #999; background: white; cursor: crosshair; display: block; }
+    .company { text-align: center; margin-top: 15px; font-weight: bold; font-size: 11px; }
+    @media print { .split-layout { flex-direction: column; } .calendar-panel { display: none; } .button-area { display: none; } }
+    
+    /* 폴드폰 모드 (768px - 1023px) */
+    @media (min-width: 768px) and (max-width: 1023px) {
+      .split-layout { gap: 5px; }
+      .calendar-panel { flex: 0 0 200px; padding: 10px; }
+      .form-panel { padding: 15px; max-height: 85vh; }
+      .cal-day-name, .cal-day { font-size: 9px; padding: 4px 2px; }
+      th, td { padding: 4px 3px; font-size: 9px; }
+      input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 9px; }
+      .small-canvas { width: 70px; height: 35px; }
+      .title { font-size: 13px; margin-bottom: 15px; }
+    }
+    
+    /* 일반 휴대폰 모드 (768px 이하) */
+    @media (max-width: 767px) {
+      .split-layout { flex-direction: column; gap: 15px; }
+      .calendar-panel { flex: 1; order: -1; }
+      .form-panel { flex: 1; padding: 12px; max-height: none; }
+      .title { font-size: 14px; margin-bottom: 15px; }
+      th, td { padding: 5px; font-size: 11px; }
+      input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 11px; padding: 3px; }
+      .btn, .modal-btn { padding: 6px 12px; font-size: 11px; }
+      .small-canvas { width: 100%; max-width: 150px; height: 50px; }
+      .sig-content { flex-direction: column; gap: 10px; }
+      .modal-btn { padding: 10px 15px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+<div class="split-layout">
+  <div class="calendar-panel">
+    <div class="cal-header">
+      <span class="cal-nav" onclick="prevMonth()">&lt;</span>
+      <span id="calMonth" style="text-align:center;flex:1;"></span>
+      <span class="cal-nav" onclick="nextMonth()">&gt;</span>
+    </div>
+    <div class="cal-grid" id="calendar"></div>
+    <div class="records-title">📋 저장된 기록</div>
+    <div class="records-list" id="recordsList"></div>
+  </div>
+
+  <div class="form-panel">
+    <div id="formContainer">
+      <div class="title">세스코라이프케어 냉난방기 클리닝 서비스 결과서</div>
+      
+      <table>
+        <tr><th style="width:12%;">고객명</th><td style="width:25%;"><input type="text" id="customerName"></td><th style="width:12%;">연락처</th><td style="width:51%;"><input type="tel" id="phone"></td></tr>
+        <tr><th>주소</th><td colspan="3"><input type="text" id="address"></td></tr>
+      </table>
+      
+      <table>
+        <tr><th colspan="2" style="width:15%;">구분</th><th style="width:17%;">벽걸이</th><th style="width:17%;">스탠드</th><th style="width:17%;">천장형</th><th style="width:17%;">실외기</th><th style="width:17%;">기타</th></tr>
+        <tr>
+          <th rowspan="2">대상<br>제품</th><th>수량</th>
+          <td style="text-align:center;"><input type="number" id="qty_wall" min="0" style="width:60%;"></td>
+          <td style="text-align:center;"><input type="number" id="qty_stand" min="0" style="width:60%;"></td>
+          <td style="text-align:center;"><input type="number" id="qty_ceiling" min="0" style="width:60%;"></td>
+          <td style="text-align:center;"><input type="number" id="qty_outdoor" min="0" style="width:60%;"></td>
+          <td style="text-align:center;"><input type="number" id="qty_other" min="0" style="width:60%;"></td>
+        </tr>
+        <tr><th>제조사</th>
+          <td><input type="text" id="maker_wall"></td><td><input type="text" id="maker_stand"></td><td><input type="text" id="maker_ceiling"></td><td><input type="text" id="maker_outdoor"></td><td><input type="text" id="maker_other"></td>
+        </tr>
+      </table>
+      
+      <table>
+        <tr><th style="text-align:left;width:60%;">투입 전 자가 진단(담당자 기록)</th><th style="width:20%;">이상 (유)</th><th style="width:20%;">이상 (무)</th></tr>
+        <tr><td style="text-align:left;">용모/복장 청결 상태</td><td style="text-align:center;"><input type="radio" name="r1" value="유"></td><td style="text-align:center;"><input type="radio" name="r1" value="무"></td></tr>
+        <tr><td style="text-align:left;">세척장비 및 도구 청결 상태</td><td style="text-align:center;"><input type="radio" name="r2" value="유"></td><td style="text-align:center;"><input type="radio" name="r2" value="무"></td></tr>
+        <tr><td style="text-align:left;">UV살균기 준비, 작동 상태</td><td style="text-align:center;"><input type="radio" name="r3" value="유"></td><td style="text-align:center;"><input type="radio" name="r3" value="무"></td></tr>
+        <tr><td style="text-align:left;">곡물발효살균소독제 준비</td><td style="text-align:center;"><input type="radio" name="r4" value="유"></td><td style="text-align:center;"><input type="radio" name="r4" value="무"></td></tr>
+        <tr><td style="text-align:left;">보양도구(매트, 테이프) 준비 상태</td><td style="text-align:center;"><input type="radio" name="r5" value="유"></td><td style="text-align:center;"><input type="radio" name="r5" value="무"></td></tr>
+        <tr><td style="text-align:left;">지정 케미컬(핀 세척제) 준비</td><td style="text-align:center;"><input type="radio" name="r6" value="유"></td><td style="text-align:center;"><input type="radio" name="r6" value="무"></td></tr>
+      </table>
+      
+      <table>
+        <tr><th style="text-align:left;width:60%;">사전 점검 및 미팅(고객 기록)</th><th style="width:20%;">그렇다</th><th style="width:20%;">아니다</th></tr>
+        <tr><td style="text-align:left;">1. 서비스 시간과 작업내용에 대한 설명을 잘 들었다</td><td style="text-align:center;"><input type="radio" name="pre1" value="yes"></td><td style="text-align:center;"><input type="radio" name="pre1" value="no"></td></tr>
+        <tr><td style="text-align:left;">2. 세스코만의 UV살균기, 곡물발효살균소독제 설명을 잘 들었다</td><td style="text-align:center;"><input type="radio" name="pre2" value="yes"></td><td style="text-align:center;"><input type="radio" name="pre2" value="no"></td></tr>
+        <tr><td style="text-align:left;">3. 보양 작업과 욕실 사용에 대해 설명을 들었다</td><td style="text-align:center;"><input type="radio" name="pre3" value="yes"></td><td style="text-align:center;"><input type="radio" name="pre3" value="no"></td></tr>
+        <tr><td style="text-align:left;">4. 제품의 외관과 동작 이상여부를 함께 확인했다</td><td style="text-align:center;"><input type="radio" name="pre4" value="yes"></td><td style="text-align:center;"><input type="radio" name="pre4" value="no"></td></tr>
+        <tr><td style="text-align:left;">5. 개인물품과 귀중품을 이동하도록 사전에 안내받았다</td><td style="text-align:center;"><input type="radio" name="pre5" value="yes"></td><td style="text-align:center;"><input type="radio" name="pre5" value="no"></td></tr>
+      </table>
+
+      <table>
+        <tr><th style="text-align:left;width:60%;">특이사항 동의 여부(고객 기록)</th><th style="width:20%;">동의/부동의</th><th style="width:20%;">서명</th></tr>
+        <tr><td style="text-align:left;">노후로 인해 세척간 기기 손상 발생 가능성에 따른 책임 고객 감수</td><td style="text-align:center;"><input type="radio" name="damage_risk" value="동의"> 동의 / <input type="radio" name="damage_risk" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="damageRiskCanvas" onclick="openModal('damageRiskCanvas')"></canvas></td></tr>
+      </table>
+      
+      <table>
+        <tr><th style="text-align:left;width:60%;">특이사항 등의 여부(고객 기록)</th><th style="width:20%;">도의/부동의</th><th style="width:20%;">서명</th></tr>
+        <tr><td style="text-align:left;">1. 서비스 환경 및 기기에 따라 주기 추가 요금 발생 도의 여부</td><td style="text-align:center;"><input type="radio" name="extra_period" value="도의"> 도의 / <input type="radio" name="extra_period" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="extraPeriodCanvas" onclick="openModal('extraPeriodCanvas')"></canvas></td></tr>
+        <tr><td style="text-align:left;">2. 노후 인해 세척간 기기 손상 가능성에 따른 책임 고객 감수 도의 여부</td><td style="text-align:center;"><input type="radio" name="damage" value="도의"> 도의 / <input type="radio" name="damage" value="부동의"> 부동의</td><td style="text-align:center;"><canvas class="small-canvas" id="damageCanvas" onclick="openModal('damageCanvas')"></canvas></td></tr>
+      </table>
+      
+      <table>
+        <tr><th style="text-align:left;width:60%;">사후 점검 및 미팅(고객 기록)</th><th style="width:20%;">그렇다</th><th style="width:20%;">아니다</th></tr>
+        <tr><td style="text-align:left;">1. 클리닝 서비스 전, 후 비교 설명을 잘 들었다</td><td style="text-align:center;"><input type="radio" name="post1" value="yes"></td><td style="text-align:center;"><input type="radio" name="post1" value="no"></td></tr>
+        <tr><td style="text-align:left;">2. 서비스 후 제품의 외관과 동작 확인결과 이상없다</td><td style="text-align:center;"><input type="radio" name="post2" value="yes"></td><td style="text-align:center;"><input type="radio" name="post2" value="no"></td></tr>
+        <tr><td style="text-align:left;">3. 서비스를 위해 이동되었던 물건이 원위치 되어 있다</td><td style="text-align:center;"><input type="radio" name="post3" value="yes"></td><td style="text-align:center;"><input type="radio" name="post3" value="no"></td></tr>
+        <tr><td style="text-align:left;">4. 공간 살균 서비스를 잘 받았다</td><td style="text-align:center;"><input type="radio" name="post4" value="yes"></td><td style="text-align:center;"><input type="radio" name="post4" value="no"></td></tr>
+        <tr><td style="text-align:left;">5. 거실과 욕실의 사후 청결 상태가 깔끔했다</td><td style="text-align:center;"><input type="radio" name="post5" value="yes"></td><td style="text-align:center;"><input type="radio" name="post5" value="no"></td></tr>
+      </table>
+      
+      <table>
+        <tr><th style="width:15%;">서비스 제공일</th><td style="width:15%;text-align:center;"><input type="date" id="serviceDate" style="width:90%;"></td><th style="width:15%;">서비스 시간</th><td style="width:55%;text-align:center;"><input type="time" id="startTime" style="width:45%;"> ~ <input type="time" id="endTime" style="width:45%;"></td></tr>
+        <tr><th>서비스 담당자</th><td colspan="3"><input type="text" id="technician"></td></tr>
+      </table>
+      
+      <table><tr><td style="text-align:center;"><strong>위 내용으로 서비스가 완료되었음을 확인합니다.</strong></td></tr></table>
+      
+      <div class="sig-section">
+        <div class="sig-title">고객 서명</div>
+        <div class="sig-content">
+          <div>
+            <canvas id="signCanvas" width="150" height="80" onclick="openModal('signCanvas')"></canvas>
+          </div>
+        </div>
+      </div>
+      
+      <div class="company">(주)세스코라이프케어</div>
+      
+      <div class="button-area">
+        <button class="btn" onclick="resetForm()">🔄 초기화</button>
+        <button class="btn btn-primary" onclick="saveForm()">💾 저장</button>
+        <button class="btn" onclick="printForm()">🖨️ 인쇄</button>
+        <button class="btn" onclick="gotoCalendar()">📅 달력</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="signature-modal" id="signModal">
+  <div style="text-align:center;font-weight:bold;font-size:14px;margin-bottom:10px;">손으로 서명해주세요</div>
+  <canvas class="modal-canvas" id="drawCanvas"></canvas>
+  <div class="modal-controls">
+    <button class="modal-btn" onclick="clearDraw()">지우기</button>
+    <button class="modal-btn modal-btn-primary" onclick="saveSig()">완료</button>
+    <button class="modal-btn" onclick="closeModal()">취소</button>
+  </div>
+</div>
+
+<script>
+let isDrawing = false, lastX = 0, lastY = 0, currentId = null, currentDate = null, isEditing = false;
+let mainCanvas = null, mainCtx = null, drawCanvas = null, drawCtx = null;
+let currentMonth = new Date(), today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+window.addEventListener('load', () => {
+  mainCanvas = document.getElementById('signCanvas');
+  mainCtx = mainCanvas.getContext('2d');
+  drawCanvas = document.getElementById('drawCanvas');
+  drawCtx = drawCanvas.getContext('2d');
+  
+  drawCanvas.addEventListener('mousedown', (e) => { isDrawing = true; const r = drawCanvas.getBoundingClientRect(); lastX = e.clientX - r.left; lastY = e.clientY - r.top; });
+  drawCanvas.addEventListener('mousemove', (e) => {
+    if (!isDrawing) return;
+    const r = drawCanvas.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    drawCtx.beginPath();
+    drawCtx.moveTo(lastX, lastY);
+    drawCtx.lineTo(x, y);
+    drawCtx.strokeStyle = '#000';
+    drawCtx.lineWidth = 2;
+    drawCtx.lineCap = 'round';
+    drawCtx.lineJoin = 'round';
+    drawCtx.stroke();
+    lastX = x;
+    lastY = y;
+  });
+  drawCanvas.addEventListener('mouseup', () => { isDrawing = false; });
+  drawCanvas.addEventListener('mouseout', () => { isDrawing = false; });
+  drawCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); isDrawing = true; const t = e.touches[0]; const r = drawCanvas.getBoundingClientRect(); lastX = t.clientX - r.left; lastY = t.clientY - r.top; });
+  drawCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); if (!isDrawing) return; const t = e.touches[0]; const r = drawCanvas.getBoundingClientRect(); const x = t.clientX - r.left, y = t.clientY - r.top; drawCtx.beginPath(); drawCtx.moveTo(lastX, lastY); drawCtx.lineTo(x, y); drawCtx.strokeStyle = '#000'; drawCtx.lineWidth = 2; drawCtx.lineCap = 'round'; drawCtx.lineJoin = 'round'; drawCtx.stroke(); lastX = x; lastY = y; });
+  drawCanvas.addEventListener('touchend', (e) => { e.preventDefault(); isDrawing = false; });
+  
+  renderCalendar();
+  renderRecordsList();
+  document.getElementById('serviceDate').valueAsDate = today;
+});
+
+function formatDate(d) { const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return d.getFullYear() + '-' + m + '-' + day; }
+
+function renderCalendar() {
+  const year = currentMonth.getFullYear(), month = currentMonth.getMonth();
+  const first = new Date(year, month, 1), last = new Date(year, month + 1, 0);
+  const startDate = new Date(first); startDate.setDate(startDate.getDate() - first.getDay());
+  
+  document.getElementById('calMonth').textContent = year + '년 ' + (month + 1) + '월';
+  
+  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
+  const savedDates = new Set(records.map(r => r.date));
+  
+  let html = '<div class="cal-day-name">일</div><div class="cal-day-name">월</div><div class="cal-day-name">화</div><div class="cal-day-name">수</div><div class="cal-day-name">목</div><div class="cal-day-name">금</div><div class="cal-day-name">토</div>';
+  
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(startDate);
+    d.setDate(d.getDate() + i);
+    const dateStr = formatDate(d);
+    
+    if (d.getMonth() !== month) {
+      html += '<div class="cal-day other">' + d.getDate() + '</div>';
+    } else {
+      let cls = 'cal-day';
+      if (dateStr === formatDate(today)) cls += ' today';
+      if (d < today) {
+        cls += ' disabled';
+        if (savedDates.has(dateStr)) cls += ' saved';
+        html += '<div class="' + cls + '" onclick="loadRecord(\'' + dateStr + '\')">' + d.getDate() + '</div>';
+      } else {
+        if (savedDates.has(dateStr)) cls += ' saved';
+        html += '<div class="' + cls + '" onclick="createForm(\'' + dateStr + '\')">' + d.getDate() + '</div>';
+      }
+    }
+  }
+  
+  document.getElementById('calendar').innerHTML = html;
+}
+
+function renderRecordsList() {
+  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
+  let html = '';
+  records.forEach(r => {
+    html += '<div class="record-item" onclick="loadRecord(\'' + r.date + '\')"><strong>' + r.date + '</strong><br>' + (r.customerName ? r.customerName : '(미기록)') + '</div>';
+  });
+  document.getElementById('recordsList').innerHTML = html || '<div style="padding:5px;color:#999;">저장된 기록 없음</div>';
+}
+
+function createForm(dateStr) {
+  currentDate = dateStr;
+  isEditing = false;
+  resetForm();
+  document.getElementById('serviceDate').value = dateStr;
+}
+
+function loadRecord(dateStr) {
+  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
+  const data = records.find(r => r.date === dateStr);
+  if (!data) return;
+  
+  currentDate = dateStr;
+  isEditing = true;
+  
+  Object.keys(data).forEach(key => {
+    const el = document.getElementById(key);
+    if (el && el.type !== 'radio' && !key.includes('Sig') && key !== 'sign' && key !== 'damage_sig') el.value = data[key] || '';
+  });
+  
+  ['r1','r2','r3','r4','r5','r6','pre1','pre2','pre3','pre4','pre5','damage_risk','extra_period','damage','post1','post2','post3','post4','post5'].forEach(name => {
+    if (data[name]) { const r = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]'); if (r) r.checked = true; }
+  });
+  
+  const loadSig = (imgKey, canvasId) => {
+    if (data[imgKey]) { const img = new Image(); img.onload = () => { const c = document.getElementById(canvasId); const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height); }; img.src = data[imgKey]; }
+  };
+  loadSig('sign', 'signCanvas');
+  loadSig('damageRisk', 'damageRiskCanvas');
+  loadSig('extraPeriod', 'extraPeriodCanvas');
+  loadSig('damage_sig', 'damageCanvas');
+}
+
+function openModal(id) {
+  currentId = id;
+  document.getElementById('signModal').classList.add('active');
+  setTimeout(() => {
+    const rect = drawCanvas.getBoundingClientRect();
+    drawCanvas.width = Math.max(rect.width, 400) || 400;
+    drawCanvas.height = Math.max(rect.height, 300) || 300;
+    // DPI 스케일 보정 (고해상도 디스플레이용)
+    const dpr = window.devicePixelRatio || 1;
+    if (dpr > 1) {
+      drawCanvas.width *= dpr;
+      drawCanvas.height *= dpr;
+      drawCtx.scale(dpr, dpr);
+    }
+  }, 50);
+}
+
+function closeModal() {
+  document.getElementById('signModal').classList.remove('active');
+  clearDraw();
+  currentId = null;
+}
+
+function clearDraw() { drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height); }
+function clearSig() { mainCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height); }
+
+function saveSig() {
+  if (currentId) {
+    const c = document.getElementById(currentId);
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+    
+    // drawCanvas 크기를 canvas 기본 크기로 정규화
+    const dpr = window.devicePixelRatio || 1;
+    const drawWidth = drawCanvas.width / dpr;
+    const drawHeight = drawCanvas.height / dpr;
+    
+    // 타겟 canvas에 맞춰서 그리기 (가로세로 비율 유지)
+    const ratio = Math.min(c.width / drawWidth, c.height / drawHeight);
+    const newWidth = drawWidth * ratio;
+    const newHeight = drawHeight * ratio;
+    const offsetX = (c.width - newWidth) / 2;
+    const offsetY = (c.height - newHeight) / 2;
+    
+    ctx.drawImage(drawCanvas, offsetX, offsetY, newWidth, newHeight);
+  }
+  closeModal();
+}
+
+function saveForm() {
+  if (!currentDate) { alert('날짜를 선택해주세요'); return; }
+  
+  const data = {
+    date: currentDate,
+    customerName: document.getElementById('customerName').value,
+    phone: document.getElementById('phone').value,
+    address: document.getElementById('address').value,
+    qty_wall: document.getElementById('qty_wall').value,
+    qty_stand: document.getElementById('qty_stand').value,
+    qty_ceiling: document.getElementById('qty_ceiling').value,
+    qty_outdoor: document.getElementById('qty_outdoor').value,
+    qty_other: document.getElementById('qty_other').value,
+    maker_wall: document.getElementById('maker_wall').value,
+    maker_stand: document.getElementById('maker_stand').value,
+    maker_ceiling: document.getElementById('maker_ceiling').value,
+    maker_outdoor: document.getElementById('maker_outdoor').value,
+    maker_other: document.getElementById('maker_other').value,
+    serviceDate: document.getElementById('serviceDate').value,
+    startTime: document.getElementById('startTime').value,
+    endTime: document.getElementById('endTime').value,
+    technician: document.getElementById('technician').value,
+    r1: document.querySelector('input[name="r1"]:checked')?.value,
+    r2: document.querySelector('input[name="r2"]:checked')?.value,
+    r3: document.querySelector('input[name="r3"]:checked')?.value,
+    r4: document.querySelector('input[name="r4"]:checked')?.value,
+    r5: document.querySelector('input[name="r5"]:checked')?.value,
+    r6: document.querySelector('input[name="r6"]:checked')?.value,
+    pre1: document.querySelector('input[name="pre1"]:checked')?.value,
+    pre2: document.querySelector('input[name="pre2"]:checked')?.value,
+    pre3: document.querySelector('input[name="pre3"]:checked')?.value,
+    pre4: document.querySelector('input[name="pre4"]:checked')?.value,
+    pre5: document.querySelector('input[name="pre5"]:checked')?.value,
+    damage_risk: document.querySelector('input[name="damage_risk"]:checked')?.value,
+    extra_period: document.querySelector('input[name="extra_period"]:checked')?.value,
+    damage: document.querySelector('input[name="damage"]:checked')?.value,
+    post1: document.querySelector('input[name="post1"]:checked')?.value,
+    post2: document.querySelector('input[name="post2"]:checked')?.value,
+    post3: document.querySelector('input[name="post3"]:checked')?.value,
+    post4: document.querySelector('input[name="post4"]:checked')?.value,
+    post5: document.querySelector('input[name="post5"]:checked')?.value,
+    sign: mainCanvas.toDataURL(),
+    damageRisk: document.getElementById('damageRiskCanvas').toDataURL(),
+    extraPeriod: document.getElementById('extraPeriodCanvas').toDataURL(),
+    damage_sig: document.getElementById('damageCanvas').toDataURL()
+  };
+  
+  let records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
+  const idx = records.findIndex(r => r.date === currentDate);
+  if (idx >= 0) {
+    records[idx] = data;
+  } else {
+    records.unshift(data);
+  }
+  localStorage.setItem('sesco_records', JSON.stringify(records));
+  
+  alert('저장되었습니다!');
+  renderCalendar();
+  renderRecordsList();
+}
+
+function resetForm() {
+  document.querySelectorAll('input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"]').forEach(e => e.value = '');
+  document.querySelectorAll('input[type="radio"], input[type="checkbox"]').forEach(e => e.checked = false);
+  document.querySelectorAll('canvas').forEach(c => c.getContext('2d').clearRect(0, 0, c.width, c.height));
+  document.getElementById('serviceDate').valueAsDate = new Date(currentDate + 'T00:00:00') || today;
+}
+
+function printForm() { window.print(); }
+function gotoCalendar() { renderCalendar(); renderRecordsList(); }
+function prevMonth() { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); }
+function nextMonth() { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); }
+
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+</script>
+</body>
+</html>
