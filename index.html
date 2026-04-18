@@ -40,7 +40,8 @@
     input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] {
       width: 100%; border: none; padding: 1px 2px; font-size: 10px; background: transparent; font-family: inherit; min-width: 50px;
     }
-    input[type="date"] { min-width: 100px; }
+    input[type="date"] { min-width: 140px; }
+    input[type="time"] { min-width: 80px; }
     input[type="radio"] { margin-right: 2px; cursor: pointer; }
     .btn { padding: 8px 15px; border: 1px solid #999; border-radius: 3px; font-size: 12px; font-weight: bold; cursor: pointer; background: #f0f0f0; }
     .btn:hover { background: #e0e0e0; }
@@ -81,6 +82,8 @@
       .title { font-size: 14px; margin-bottom: 15px; }
       th, td { padding: 5px; font-size: 11px; }
       input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 11px; padding: 3px; }
+      input[type="date"] { min-width: 140px; font-size: 11px; }
+      input[type="time"] { min-width: 80px; font-size: 11px; }
       .btn, .modal-btn { padding: 6px 12px; font-size: 11px; }
       .small-canvas { width: 100%; max-width: 200px; height: 60px; }
       .sig-content { flex-direction: column; gap: 10px; }
@@ -526,4 +529,3 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
 </script>
 </body>
 </html>
-
