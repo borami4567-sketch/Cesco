@@ -280,6 +280,13 @@ window.addEventListener('load', () => {
   // 기기 회전 시 canvas 자동 리사이징
   window.addEventListener('orientationchange', () => {
     if (currentId && document.getElementById('signModal').classList.contains('active')) {
+      setTimeout(() => openModal(currentId), 200);
+    }
+  });
+  
+  // 화면 크기 변경 감지 (resize로도 대응)
+  window.addEventListener('resize', () => {
+    if (currentId && document.getElementById('signModal').classList.contains('active')) {
       setTimeout(() => openModal(currentId), 100);
     }
   });
