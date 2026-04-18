@@ -254,14 +254,11 @@ window.addEventListener('load', () => {
     const r = drawCanvas.getBoundingClientRect();
     const isPortrait = window.innerHeight > window.innerWidth;
     if (isPortrait) {
-      // 모달이 rotate(90deg) translateY(-100%) 된 상태
-      // 실제 캔버스 좌측 상단이 화면 우측 하단 방향에 있음
-      // clientX, clientY → 캔버스 내 좌표로 변환
-      const relX = clientX - r.left;
-      const relY = clientY - r.top;
-      // 회전 역변환: 캔버스 너비/높이 기준
-      const canvasX = (r.height - relY) * (drawCanvas.width / r.height);
-      const canvasY = relX * (drawCanvas.height / r.width);
+      // 모달이 rotate(90deg) 시계방향 회전 상태
+      // canvas X축(좌→우) = 화면 Y방향(위→아래)
+      // canvas Y축(위→아래) = 화면 X방향(오른쪽→왼쪽, 역방향)
+      const canvasX = (clientY - r.top) * (drawCanvas.width / r.height);
+      const canvasY = (r.right - clientX) * (drawCanvas.height / r.width);
       return { x: canvasX, y: canvasY };
     } else {
       return {
