@@ -13,26 +13,51 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: '맑은 고딕', Arial, sans-serif; background: #f5f5f5; padding: 10px; color: #333; }
-    .split-layout { display: flex; gap: 10px; max-width: 1400px; margin: 0 auto; }
-    .calendar-panel { flex: 0 0 280px; background: white; padding: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .form-panel { flex: 1; background: white; padding: 20px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto; word-break: break-word; }
-    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; }
-    .cal-nav { cursor: pointer; font-size: 18px; }
+    /* ===== 화면 레이어 ===== */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ===== 달력 화면 ===== */
+    .cal-screen { max-width: 500px; margin: 0 auto; background: white; border-radius: 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-weight: bold; font-size: 16px; }
+    .cal-nav { cursor: pointer; font-size: 22px; padding: 0 8px; }
     .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-    .cal-day-name { text-align: center; font-weight: bold; font-size: 11px; padding: 5px; background: #e8e8e8; }
-    .cal-day { text-align: center; padding: 8px 3px; font-size: 11px; border: 1px solid #ddd; cursor: pointer; background: white; }
+    .cal-day-name { text-align: center; font-weight: bold; font-size: 11px; padding: 6px 2px; background: #e8e8e8; }
+    .cal-day { text-align: center; padding: 6px 2px 4px; font-size: 12px; border: 1px solid #ddd; cursor: pointer; background: white; min-height: 44px; position: relative; }
+    .cal-day .day-num { display: block; }
+    .cal-day .day-badge { display: inline-block; background: #1a5276; color: white; border-radius: 10px; font-size: 9px; padding: 1px 5px; margin-top: 2px; }
     .cal-day.other { color: #ccc; cursor: default; }
-    .cal-day.disabled { background: #f0f0f0; cursor: not-allowed; color: #999; }
     .cal-day.today { background: #fff3cd; font-weight: bold; }
-    .cal-day.saved { background: #c3e6cb; color: #155724; font-weight: bold; }
-    .cal-day.saved.disabled { background: #d4edda; }
-    .cal-day:not(.other):not(.disabled):hover { background: #d9ecf7; }
-    .records-title { font-weight: bold; margin-top: 15px; padding-top: 10px; border-top: 1px solid #ddd; font-size: 12px; }
-    .records-list { font-size: 11px; max-height: 150px; overflow-y: auto; }
-    .record-item { padding: 5px; margin: 3px 0; background: #f9f9f9; border-left: 3px solid #1a5276; cursor: pointer; border-radius: 2px; }
-    .record-item:hover { background: #e8f4f8; }
-    .record-item.active { background: #c3e6cb; border-left-color: #155724; }
-    .cal-day.selected { background: #1a5276; color: white; font-weight: bold; border-color: #1a5276; }
+    .cal-day.has-records { background: #e8f4e8; }
+    .cal-day.selected { background: #1a5276; color: white; font-weight: bold; }
+    .cal-day.selected .day-badge { background: white; color: #1a5276; }
+    .cal-day:not(.other):hover { background: #d9ecf7; }
+    .cal-day.selected:hover { background: #0d3b66; }
+    .new-record-btn { width: 100%; margin-top: 12px; padding: 12px; background: #1a5276; color: white; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .new-record-btn:hover { background: #0d3b66; }
+
+    /* ===== 기록 목록 화면 ===== */
+    .list-screen { max-width: 500px; margin: 0 auto; }
+    .list-header { display: flex; align-items: center; gap: 10px; background: #1a5276; color: white; padding: 12px 15px; border-radius: 8px 8px 0 0; }
+    .list-header .back-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; }
+    .list-header h2 { flex: 1; font-size: 15px; margin: 0; }
+    .list-header .add-btn { background: white; color: #1a5276; border: none; border-radius: 4px; padding: 5px 10px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .list-body { background: white; border-radius: 0 0 8px 8px; min-height: 200px; padding: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .record-card { display: flex; align-items: center; padding: 12px; margin-bottom: 8px; background: #f9f9f9; border-left: 4px solid #1a5276; border-radius: 4px; cursor: pointer; }
+    .record-card:hover { background: #e8f4f8; }
+    .record-card-info { flex: 1; }
+    .record-card-info .rc-time { font-size: 13px; font-weight: bold; color: #1a5276; }
+    .record-card-info .rc-name { font-size: 12px; color: #555; margin-top: 2px; }
+    .record-card-del { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 11px; cursor: pointer; margin-left: 8px; }
+    .record-card-del:hover { background: #b02a37; }
+    .empty-list { text-align: center; padding: 40px; color: #999; font-size: 13px; }
+
+    /* ===== 폼 화면 ===== */
+    .form-screen { max-width: 700px; margin: 0 auto; }
+    .form-header { display: flex; align-items: center; gap: 10px; background: #1a5276; color: white; padding: 12px 15px; border-radius: 8px 8px 0 0; }
+    .form-header .back-btn { background: none; border: none; color: white; font-size: 20px; cursor: pointer; padding: 0; }
+    .form-header h2 { flex: 1; font-size: 14px; margin: 0; }
+    .form-body { background: white; border-radius: 0 0 8px 8px; padding: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-y: auto; word-break: break-word; }
     .title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 20px; }
     table { width: 100%; border-collapse: collapse; margin-bottom: 12px; border: 1px solid #000; }
     th, td { border: 1px solid #000; padding: 5px 4px; font-size: 10px; }
@@ -74,24 +99,10 @@
     .company { text-align: center; margin-top: 15px; font-weight: bold; font-size: 11px; }
     @media print { .split-layout { flex-direction: column; } .calendar-panel { display: none; } .button-area { display: none; } }
     
-    /* 폴드폰 모드 (768px - 1023px) */
-    @media (min-width: 768px) and (max-width: 1023px) {
-      .split-layout { gap: 5px; }
-      .calendar-panel { flex: 0 0 200px; padding: 10px; }
-      .form-panel { padding: 15px; max-height: 85vh; }
-      .cal-day-name, .cal-day { font-size: 9px; padding: 4px 2px; }
-      th, td { padding: 4px 3px; font-size: 9px; }
-      input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 9px; }
-      .small-canvas { width: 120px; height: 60px; }
-      .title { font-size: 13px; margin-bottom: 15px; }
-    }
-    
-    /* 일반 휴대폰 모드 (768px 이하) */
+    /* 반응형 */
     @media (max-width: 767px) {
-      .split-layout { flex-direction: column; gap: 15px; }
-      .calendar-panel { flex: 1; order: -1; }
-      .form-panel { flex: 1; padding: 12px; max-height: none; }
-      .title { font-size: 14px; margin-bottom: 15px; }
+      .cal-screen, .list-screen, .form-screen { border-radius: 0; }
+      .cal-header { font-size: 14px; }
       th, td { padding: 5px; font-size: 11px; }
       input[type="text"], input[type="tel"], input[type="number"], input[type="date"], input[type="time"] { font-size: 11px; padding: 3px; }
       input[type="date"] { min-width: 140px; font-size: 11px; }
@@ -112,20 +123,39 @@
   </style>
 </head>
 <body>
-<div class="split-layout">
-  <div class="calendar-panel">
+<!-- 화면 1: 달력 -->
+<div class="screen active" id="screenCalendar">
+  <div class="cal-screen">
     <div class="cal-header">
-      <span class="cal-nav" onclick="prevMonth()">&lt;</span>
-      <span id="calMonth" style="text-align:center;flex:1;"></span>
-      <span class="cal-nav" onclick="nextMonth()">&gt;</span>
+      <span class="cal-nav" onclick="prevMonth()">&#8249;</span>
+      <span id="calMonth"></span>
+      <span class="cal-nav" onclick="nextMonth()">&#8250;</span>
     </div>
     <div class="cal-grid" id="calendar"></div>
-    <div class="records-title">📋 저장된 기록</div>
-    <div class="records-list" id="recordsList"></div>
+    <button class="new-record-btn" onclick="showNewForm()">+ 오늘 날짜로 새 기록 작성</button>
   </div>
+</div>
 
-  <div class="form-panel">
-    <div id="formContainer">
+<!-- 화면 2: 날짜별 기록 목록 -->
+<div class="screen" id="screenList">
+  <div class="list-screen">
+    <div class="list-header">
+      <button class="back-btn" onclick="showCalendar()">&#8592;</button>
+      <h2 id="listDateTitle"></h2>
+      <button class="add-btn" onclick="showNewFormForDate()">+ 새 기록</button>
+    </div>
+    <div class="list-body" id="recordList"></div>
+  </div>
+</div>
+
+<!-- 화면 3: 기록 작성/수정 폼 -->
+<div class="screen" id="screenForm">
+  <div class="form-screen">
+    <div class="form-header">
+      <button class="back-btn" onclick="backFromForm()">&#8592;</button>
+      <h2 id="formTitle">새 기록 작성</h2>
+    </div>
+    <div class="form-body">
       <div class="title">세스코라이프케어 냉난방기 클리닝 서비스 결과서</div>
       
       <table>
@@ -209,7 +239,6 @@
         <button class="btn" onclick="resetForm()">🔄 초기화</button>
         <button class="btn btn-primary" onclick="saveForm()">💾 저장</button>
         <button class="btn" onclick="printForm()">🖨️ 인쇄</button>
-        <button class="btn" onclick="gotoCalendar()">📅 달력</button>
       </div>
     </div>
   </div>
@@ -226,9 +255,90 @@
 </div>
 
 <script>
-let isDrawing = false, lastX = 0, lastY = 0, currentId = null, currentDate = null, isEditing = false;
+let isDrawing = false, lastX = 0, lastY = 0, currentId = null, currentDate = null, currentRecordId = null;
 let mainCanvas = null, mainCtx = null, drawCanvas = null, drawCtx = null;
 let currentMonth = new Date(), today = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+
+function getRecords() { return JSON.parse(localStorage.getItem('sesco_records') || '[]'); }
+function saveRecords(records) { localStorage.setItem('sesco_records', JSON.stringify(records)); }
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function showCalendar() {
+  document.getElementById('screenCalendar').classList.add('active');
+  document.getElementById('screenList').classList.remove('active');
+  document.getElementById('screenForm').classList.remove('active');
+  renderCalendar();
+}
+
+function showList(dateStr) {
+  currentDate = dateStr;
+  document.getElementById('screenCalendar').classList.remove('active');
+  document.getElementById('screenList').classList.add('active');
+  document.getElementById('screenForm').classList.remove('active');
+  renderList(dateStr);
+}
+
+function showForm(recordId) {
+  currentRecordId = recordId || null;
+  document.getElementById('screenCalendar').classList.remove('active');
+  document.getElementById('screenList').classList.remove('active');
+  document.getElementById('screenForm').classList.add('active');
+  resetForm();
+  if (recordId) {
+    document.getElementById('formTitle').textContent = '기록 수정';
+    const rec = getRecords().find(r => r.id === recordId);
+    if (rec) loadFormData(rec);
+  } else {
+    document.getElementById('formTitle').textContent = '새 기록 작성';
+    document.getElementById('serviceDate').valueAsDate = currentDate ? new Date(currentDate + 'T00:00:00') : today;
+  }
+}
+
+function showNewForm() {
+  currentDate = formatDate(today);
+  showForm(null);
+}
+
+function showNewFormForDate() {
+  showForm(null);
+}
+
+function backFromForm() {
+  if (currentDate) showList(currentDate);
+  else showCalendar();
+}
+
+function renderList(dateStr) {
+  document.getElementById('listDateTitle').textContent = dateStr + ' 기록';
+  const records = getRecords().filter(r => r.date === dateStr);
+  // 시작시간 기준 정렬
+  records.sort((a, b) => (a.startTime || '').localeCompare(b.startTime || ''));
+  const body = document.getElementById('recordList');
+  if (records.length === 0) {
+    body.innerHTML = '<div class="empty-list">이 날짜에 저장된 기록이 없습니다.<br>"+ 새 기록" 버튼으로 추가하세요.</div>';
+    return;
+  }
+  body.innerHTML = records.map(r => {
+    const time = (r.startTime || '--:--') + (r.endTime ? ' ~ ' + r.endTime : '');
+    const name = r.customerName || '(고객명 미입력)';
+    return '<div class="record-card" onclick="showForm(\'' + r.id + '\')">' +
+      '<div class="record-card-info">' +
+        '<div class="rc-time">🕐 ' + time + '</div>' +
+        '<div class="rc-name">' + name + (r.address ? ' · ' + r.address : '') + '</div>' +
+      '</div>' +
+      '<button class="record-card-del" onclick="deleteRecord(event, \'' + r.id + '\')" >삭제</button>' +
+    '</div>';
+  }).join('');
+}
+
+function deleteRecord(e, id) {
+  e.stopPropagation();
+  if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+  const records = getRecords().filter(r => r.id !== id);
+  saveRecords(records);
+  renderList(currentDate);
+  renderCalendar();
+}
 
 window.addEventListener('load', () => {
   mainCanvas = document.getElementById('signCanvas');
@@ -330,22 +440,21 @@ window.addEventListener('load', () => {
     }
   });
   
-  renderCalendar();
-  renderRecordsList();
-  document.getElementById('serviceDate').valueAsDate = today;
+  showCalendar();
 });
 
 function formatDate(d) { const m = String(d.getMonth() + 1).padStart(2, '0'); const day = String(d.getDate()).padStart(2, '0'); return d.getFullYear() + '-' + m + '-' + day; }
 
 function renderCalendar() {
   const year = currentMonth.getFullYear(), month = currentMonth.getMonth();
-  const first = new Date(year, month, 1), last = new Date(year, month + 1, 0);
+  const first = new Date(year, month, 1);
   const startDate = new Date(first); startDate.setDate(startDate.getDate() - first.getDay());
   
   document.getElementById('calMonth').textContent = year + '년 ' + (month + 1) + '월';
   
-  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
-  const savedDates = new Set(records.map(r => r.date));
+  const records = getRecords();
+  const countByDate = {};
+  records.forEach(r => { countByDate[r.date] = (countByDate[r.date] || 0) + 1; });
   
   let html = '<div class="cal-day-name">일</div><div class="cal-day-name">월</div><div class="cal-day-name">화</div><div class="cal-day-name">수</div><div class="cal-day-name">목</div><div class="cal-day-name">금</div><div class="cal-day-name">토</div>';
   
@@ -353,69 +462,51 @@ function renderCalendar() {
     const d = new Date(startDate);
     d.setDate(d.getDate() + i);
     const dateStr = formatDate(d);
+    const cnt = countByDate[dateStr] || 0;
     
     if (d.getMonth() !== month) {
-      html += '<div class="cal-day other">' + d.getDate() + '</div>';
+      html += '<div class="cal-day other"><span class="day-num">' + d.getDate() + '</span></div>';
     } else {
       let cls = 'cal-day';
       if (dateStr === formatDate(today)) cls += ' today';
       if (dateStr === currentDate) cls += ' selected';
-      if (d < today) {
-        cls += ' disabled';
-        if (savedDates.has(dateStr)) cls += ' saved';
-        html += '<div class="' + cls + '" onclick="loadRecord(\'' + dateStr + '\')">' + d.getDate() + '</div>';
-      } else {
-        if (savedDates.has(dateStr)) cls += ' saved';
-        html += '<div class="' + cls + '" onclick="createForm(\'' + dateStr + '\')">' + d.getDate() + '</div>';
-      }
+      if (cnt > 0) cls += ' has-records';
+      const badge = cnt > 0 ? '<span class="day-badge">' + cnt + '건</span>' : '';
+      html += '<div class="' + cls + '" onclick="onDayClick(\'' + dateStr + '\')">' +
+        '<span class="day-num">' + d.getDate() + '</span>' + badge + '</div>';
     }
   }
   
   document.getElementById('calendar').innerHTML = html;
 }
 
-function renderRecordsList() {
-  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
-  let html = '';
-  records.forEach(r => {
-    html += '<div class="record-item" onclick="loadRecord(\'' + r.date + '\')"><strong>' + r.date + '</strong><br>' + (r.customerName ? r.customerName : '(미기록)') + '</div>';
-  });
-  document.getElementById('recordsList').innerHTML = html || '<div style="padding:5px;color:#999;">저장된 기록 없음</div>';
+function onDayClick(dateStr) {
+  currentDate = dateStr;
+  const cnt = getRecords().filter(r => r.date === dateStr).length;
+  if (cnt > 0) {
+    showList(dateStr);
+  } else {
+    showForm(null);
+  }
 }
 
-function createForm(dateStr) {
-  currentDate = dateStr;
-  isEditing = false;
-  resetForm();
-  renderCalendar();
-}
-
-function loadRecord(dateStr) {
-  const records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
-  const data = records.find(r => r.date === dateStr);
-  if (!data) return;
-  
-  currentDate = dateStr;
-  isEditing = true;
-  
-  Object.keys(data).forEach(key => {
+function loadFormData(data) {
+  const textFields = ['customerName','phone','address','qty_wall','qty_stand','qty_ceiling','qty_outdoor','qty_other',
+    'maker_wall','maker_stand','maker_ceiling','maker_outdoor','maker_other','serviceDate','startTime','endTime','technician'];
+  textFields.forEach(key => {
     const el = document.getElementById(key);
-    if (el && el.type !== 'radio' && !key.includes('Sig') && key !== 'sign' && key !== 'damage_sig') el.value = data[key] || '';
+    if (el) el.value = data[key] || '';
   });
-  
   ['r1','r2','r3','r4','r5','r6','pre1','pre2','pre3','pre4','pre5','damage_risk','extra_period','damage','post1','post2','post3','post4','post5'].forEach(name => {
     if (data[name]) { const r = document.querySelector('input[name="' + name + '"][value="' + data[name] + '"]'); if (r) r.checked = true; }
   });
-  
   const loadSig = (imgKey, canvasId) => {
-    if (data[imgKey]) { const img = new Image(); img.onload = () => { const c = document.getElementById(canvasId); const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height); }; img.src = data[imgKey]; }
+    if (data[imgKey]) { const img = new Image(); img.onload = () => { const c = document.getElementById(canvasId); const ctx = c.getContext('2d'); ctx.fillStyle='white'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, c.width, c.height); }; img.src = data[imgKey]; }
   };
   loadSig('sign', 'signCanvas');
   loadSig('damageRisk', 'damageRiskCanvas');
   loadSig('extraPeriod', 'extraPeriodCanvas');
   loadSig('damage_sig', 'damageCanvas');
-  
-  renderCalendar();
 }
 
 function openModal(id) {
@@ -528,6 +619,7 @@ function saveForm() {
   if (!currentDate) { alert('날짜를 선택해주세요'); return; }
   
   const data = {
+    id: currentRecordId || genId(),
     date: currentDate,
     customerName: document.getElementById('customerName').value,
     phone: document.getElementById('phone').value,
@@ -571,18 +663,19 @@ function saveForm() {
     damage_sig: document.getElementById('damageCanvas').toDataURL()
   };
   
-  let records = JSON.parse(localStorage.getItem('sesco_records') || '[]');
-  const idx = records.findIndex(r => r.date === currentDate);
+  let records = getRecords();
+  const idx = records.findIndex(r => r.id === data.id);
   if (idx >= 0) {
     records[idx] = data;
   } else {
-    records.unshift(data);
+    records.push(data);
   }
-  localStorage.setItem('sesco_records', JSON.stringify(records));
+  saveRecords(records);
   
   alert('저장되었습니다!');
+  currentRecordId = data.id;
+  document.getElementById('formTitle').textContent = '기록 수정';
   renderCalendar();
-  renderRecordsList();
 }
 
 function resetForm() {
@@ -593,7 +686,6 @@ function resetForm() {
 }
 
 function printForm() { window.print(); }
-function gotoCalendar() { renderCalendar(); renderRecordsList(); }
 function prevMonth() { currentMonth.setMonth(currentMonth.getMonth() - 1); renderCalendar(); }
 function nextMonth() { currentMonth.setMonth(currentMonth.getMonth() + 1); renderCalendar(); }
 
